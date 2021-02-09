@@ -8,3 +8,4 @@ matplotlib==3.1.2
 eyeD3==0.9.5
 pydub==0.24.0
 tqdm==4.46.0
+plotly==4.1.1
