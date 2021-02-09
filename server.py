@@ -11,4 +11,5 @@ def get_mood_color_from_audio_file():
 def get_mood_color_from_audio_stream():
     return jsonify({'result': get_color_from_audio(request.get_data())})
 
-app.run()
+if __name__ == '__main__':
+    app.run()
