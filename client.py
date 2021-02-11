@@ -11,10 +11,7 @@ import io
 import datetime
 
 
-TABLE_URL = 'http://seniordesigntable.msoe.edu:3002/sisbot/set_led_color'
-
-
-def main(seconds, sampling_rate, ai_service, requesttype):
+def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
     buffer_size = sampling_rate * seconds
     print(f'buffer_size: {buffer_size}')
     pa = pyaudio.PyAudio()
@@ -35,24 +32,33 @@ def main(seconds, sampling_rate, ai_service, requesttype):
     if requesttype == 'file':
         # key is defined by the server schema
         request_files = { 'audioSample': data_stream } 
-        request_url += 'get_mood_color_from_audio_file'
-    else:
+        request_url += '/get_mood_color_from_audio_file'
+    elif requesttype == 'stream':
         request_headers = { 'Content-Type': 'application/octet-stream' }
         request_data = data_stream
-        request_url += 'get_mood_color_from_audio_stream'
-    print(f'Sending request type: {requesttype} @ {datetime.datetime.now()} ')
-    response = requests.post(
+        request_url += '/get_mood_color_from_audio_stream'
+    print(f'Sending request type: {requesttype} @ {datetime.datetime.now()}')
+    ai_response = requests.post(
         ai_service,
         headers=request_headers,
         files=request_files,
         data=request_data
     )
-    if response.status_code != requests.codes.ok:
-        print(f'Error in sending request. Code: {response.status_code}')
-        print(response.text)
+    if ai_response.status_code != requests.codes.ok:
+        print(f'Error in sending AI request - code: {ai_response.status_code}')
+        print(ai_response.text)
     else:
         print(f'Recieved response @ {datetime.datetime.now()}')
-        print(response.text)
+        rgb = ai_response.json()['result']
+        wrapper = { 'data': { 'data' : led_info } }
+        table_response = requests.post(tableservice, json=wrapper)
+        if table_response.status_code == requests.codes.ok:
+            print(f'Successfully updated color to {rgb}')
+        else:
+            print(
+                f'Error in table request - code: {table_response.status_code}'
+            )
+
 
 
 def parse_arguments():
@@ -87,8 +93,15 @@ def parse_arguments():
         '-ai',
         '--aiservice',
         type=str,
-        default="https://sisyphus-mood-lighting-server.herokuapp.com/",
+        default="https://sisyphus-mood-lighting-server.herokuapp.com",
         help="URL for AI Service"
+    )
+    client_args.add_argument(
+        '-ta',
+        '--tableservice',
+        type=str,
+        default="http://seniordesigntable.msoe.edu:3002/sisbot/set_led_color",
+        help="Service that the RGB value should be sent to"
     )
     return client_args.parse_args()
 
@@ -100,4 +113,10 @@ if __name__ == '__main__':
             'Warning! Segment classifiers have been trained on 8KHz samples.'
             ' Therefore results will be not optimal. '
         )
-    main(args.seconds, args.samplingrate, args.aiservice, args.requesttype)
+    main(
+        args.seconds,
+        args.samplingrate,
+        args.aiservice,
+        args.requesttype,
+        args.tableservice
+    )
