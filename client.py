@@ -54,7 +54,8 @@ def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
             print(f'Recieved response @ {datetime.datetime.now()}')
             rgb = ai_response.json()['result']
             print(ai_response.json())
-            wrapper = { 'data': { 'data' : rgb } }
+            led_info = {"led_primary_color": rgb}
+            wrapper = { 'data': { 'data' : led_info } }
             table_response = requests.post(tableservice, json=wrapper)
             if table_response.status_code == requests.codes.ok:
                 print(f'Successfully updated color to {rgb}')
@@ -75,7 +76,7 @@ def parse_arguments():
         '--seconds',
         type=int,
         choices=[1, 2, 3, 4, 5],
-        default=1,
+        default=5,
         help="Number of seconds recorded before sent for processing"
     )
     client_args.add_argument(
