@@ -9,6 +9,7 @@ import struct
 import requests
 import io
 import datetime
+import time
 
 
 def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
@@ -22,42 +23,45 @@ def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
         input=True,
         frames_per_buffer=buffer_size
     )
-    data_bytes = stream.read(buffer_size)
-    data_stream = io.BytesIO(data_bytes)
 
-    request_headers = {}
-    request_files = {}
-    request_data = None
-    request_url = ai_service
-    if requesttype == 'file':
-        # key is defined by the server schema
-        request_files = { 'audioSample': data_stream } 
-        request_url += '/get_mood_color_from_audio_file'
-    elif requesttype == 'stream':
-        request_headers = { 'Content-Type': 'application/octet-stream' }
-        request_data = data_stream
-        request_url += '/get_mood_color_from_audio_stream'
-    print(f'Sending request type: {requesttype} @ {datetime.datetime.now()}')
-    ai_response = requests.post(
-        ai_service,
-        headers=request_headers,
-        files=request_files,
-        data=request_data
-    )
-    if ai_response.status_code != requests.codes.ok:
-        print(f'Error in sending AI request - code: {ai_response.status_code}')
-        print(ai_response.text)
-    else:
-        print(f'Recieved response @ {datetime.datetime.now()}')
-        rgb = ai_response.json()['result']
-        wrapper = { 'data': { 'data' : led_info } }
-        table_response = requests.post(tableservice, json=wrapper)
-        if table_response.status_code == requests.codes.ok:
-            print(f'Successfully updated color to {rgb}')
+    while True:
+        data_bytes = stream.read(buffer_size)
+        data_stream = io.BytesIO(data_bytes)
+
+        request_headers = {}
+        request_files = {}
+        request_data = None
+        request_url = ai_service
+        if requesttype == 'file':
+            # key is defined by the server schema
+            request_files = { 'audioSample': data_stream } 
+            request_url += '/get_mood_color_from_audio_file'
+        elif requesttype == 'stream':
+            request_headers = { 'Content-Type': 'application/octet-stream' }
+            request_data = data_stream
+            request_url += '/get_mood_color_from_audio_stream'
+        print(f'Sending request type: {requesttype} @ {datetime.datetime.now()}')
+        ai_response = requests.post(
+            ai_service,
+            headers=request_headers,
+            files=request_files,
+            data=request_data
+        )
+        if ai_response.status_code != requests.codes.ok:
+            print(f'Error in sending AI request - code: {ai_response.status_code}')
+            print(ai_response.text)
         else:
-            print(
-                f'Error in table request - code: {table_response.status_code}'
-            )
+            print(f'Recieved response @ {datetime.datetime.now()}')
+            rgb = ai_response.json()['result']
+            wrapper = { 'data': { 'data' : led_info } }
+            table_response = requests.post(tableservice, json=wrapper)
+            if table_response.status_code == requests.codes.ok:
+                print(f'Successfully updated color to {rgb}')
+            else:
+                print(
+                    f'Error in table request - code: {table_response.status_code}'
+                )
+        time.sleep(seconds)
 
 
 
