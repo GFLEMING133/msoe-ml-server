@@ -42,7 +42,7 @@ def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
             request_url += '/get_mood_color_from_audio_stream'
         print(f'Sending request type: {requesttype} @ {datetime.datetime.now()}')
         ai_response = requests.post(
-            ai_service,
+            request_url,
             headers=request_headers,
             files=request_files,
             data=request_data
@@ -53,7 +53,8 @@ def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
         else:
             print(f'Recieved response @ {datetime.datetime.now()}')
             rgb = ai_response.json()['result']
-            wrapper = { 'data': { 'data' : led_info } }
+            print(ai_response.json())
+            wrapper = { 'data': { 'data' : rgb } }
             table_response = requests.post(tableservice, json=wrapper)
             if table_response.status_code == requests.codes.ok:
                 print(f'Successfully updated color to {rgb}')
