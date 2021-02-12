@@ -88,72 +88,71 @@ def get_color_from_audio(block, rms_min_max=[0, 25000]):
     cur_win = list(shorts)
     mid_buf = mid_buf + cur_win
     del cur_win
-    if len(mid_buf) >= 5 * fs:
-        # data-driven time
-        x = numpy.int16(mid_buf)
-        seg_len = len(x)
-        r = audioop.rms(x, 2)
-        if r < rms_min_max[0]:
-            # set new min incase the default value is exceded
-            rms_min_max[0] = r
-        if r > rms_min_max[1]:
-            # set new max incase the default value is exceded
-            rms_min_max[1] = r
-        r_norm = float(r - rms_min_max[0])/float(rms_min_max[1] - rms_min_max[0])
-        r_map = int(r_norm * 255)
-        print(f'RMS: {r}; MIN: {rms_min_max[0]}; MAX: {rms_min_max[1]}; NORM: {r_norm}; MAP: {r_map}')
-        # extract features
-        # We are using the signal length as mid term window and step,
-        # in order to guarantee a mid-term feature sequence of len 1
-        [mt_f, _, _] = mF(x, fs, seg_len, seg_len, round(fs * st_win),
-                          round(fs * st_step))
-        fv = (mt_f[:, 0] - mu) / std
-        # classify vector:
-        [res, prob] = aT.classifier_wrapper(classifier, "svm_rbf", fv)
-        win_class = class_names[int(res)]
-        if prob[class_names.index("silence")] > 0.8:
-            soft_valence = 0
-            soft_energy = 0
-            print("Silence")
-        else:
-            # extract features for music mood
-            [f_2, _, _] = mF(x, fs, round(fs * mt_win_en),
-                             round(fs * mt_step_en), round(fs * st_win_en),
-                             round(fs * st_step_en))
-            [f_3, _, _] = mF(x, fs, round(fs * mt_win_va),
-                             round(fs * mt_step_va), round(fs * st_win_va),
-                             round(fs * st_step_va))
+    # data-driven time
+    x = numpy.int16(mid_buf)
+    seg_len = len(x)
+    r = audioop.rms(x, 2)
+    if r < rms_min_max[0]:
+        # set new min incase the default value is exceded
+        rms_min_max[0] = r
+    if r > rms_min_max[1]:
+        # set new max incase the default value is exceded
+        rms_min_max[1] = r
+    r_norm = float(r - rms_min_max[0])/float(rms_min_max[1] - rms_min_max[0])
+    r_map = int(r_norm * 255)
+    print(f'RMS: {r}; MIN: {rms_min_max[0]}; MAX: {rms_min_max[1]}; NORM: {r_norm}; MAP: {r_map}')
+    # extract features
+    # We are using the signal length as mid term window and step,
+    # in order to guarantee a mid-term feature sequence of len 1
+    [mt_f, _, _] = mF(x, fs, seg_len, seg_len, round(fs * st_win),
+                        round(fs * st_step))
+    fv = (mt_f[:, 0] - mu) / std
+    # classify vector:
+    [res, prob] = aT.classifier_wrapper(classifier, "svm_rbf", fv)
+    win_class = class_names[int(res)]
+    if prob[class_names.index("silence")] > 0.8:
+        soft_valence = 0
+        soft_energy = 0
+        print("Silence")
+    else:
+        # extract features for music mood
+        [f_2, _, _] = mF(x, fs, round(fs * mt_win_en),
+                            round(fs * mt_step_en), round(fs * st_win_en),
+                            round(fs * st_step_en))
+        [f_3, _, _] = mF(x, fs, round(fs * mt_win_va),
+                            round(fs * mt_step_va), round(fs * st_win_va),
+                            round(fs * st_step_va))
 
-            # normalize feature vector
-            fv_2 = (f_2[:, 0] - mu_energy) / std_energy
-            fv_3 = (f_3[:, 0] - mu_valence) / std_valence
-            [res_energy, p_en] = aT.classifier_wrapper(clf_energy,
-                                                       "svm_rbf",
-                                                       fv_2)
+        # normalize feature vector
+        fv_2 = (f_2[:, 0] - mu_energy) / std_energy
+        fv_3 = (f_3[:, 0] - mu_valence) / std_valence
+        [res_energy, p_en] = aT.classifier_wrapper(clf_energy,
+                                                    "svm_rbf",
+                                                    fv_2)
 
-            win_class_energy = class_names_energy[int(res_energy)]
-            [res_valence, p_val] = aT.classifier_wrapper(clf_valence,
-                                                         "svm_rbf",
-                                                         fv_3)
+        win_class_energy = class_names_energy[int(res_energy)]
+        [res_valence, p_val] = aT.classifier_wrapper(clf_valence,
+                                                        "svm_rbf",
+                                                        fv_3)
 
-            win_class_valence = class_names_valence[int(res_valence)]
-            soft_energy = p_en[class_names_energy.index("high")] - \
-                          p_en[class_names_energy.index("low")]
-            soft_valence = p_val[class_names_valence.index("positive")] - \
-                           p_val[class_names_valence.index("negative")]
+        win_class_valence = class_names_valence[int(res_valence)]
+        soft_energy = p_en[class_names_energy.index("high")] - \
+                        p_en[class_names_energy.index("low")]
+        soft_valence = p_val[class_names_valence.index("positive")] - \
+                        p_val[class_names_valence.index("negative")]
 
-            print(win_class, win_class_energy, win_class_valence,
-                  soft_valence, soft_energy)
+        print(win_class, win_class_energy, win_class_valence,
+                soft_valence, soft_energy)
 
-        all_data += mid_buf
-        mid_buf = []
-        h, w, _ = img
-        y_center, x_center = int(h / 2), int(w / 2)
-        x = x_center + int((w/2) * soft_valence)
-        y = y_center - int((h/2) * soft_energy)
+    all_data += mid_buf
+    mid_buf = []
+    h, w, _ = img
+    y_center, x_center = int(h / 2), int(w / 2)
+    x = x_center + int((w/2) * soft_valence)
+    y = y_center - int((h/2) * soft_energy)
 
-        radius = 20
-        color = numpy.median(emo_map[y-2:y+2, x-2:x+2], axis=0).mean(axis=0)
-        # set sisyphus led colors
-        alpha = format(r_map, '02x')
-        return format(int(color[2]), '02x') + format(int(color[1]), '02x') + format(int(color[0]), '02x') + alpha
+    radius = 20
+    color = numpy.median(emo_map[y-2:y+2, x-2:x+2], axis=0).mean(axis=0)
+    # set sisyphus led colors
+    alpha = format(r_map, '02x')
+    return format(int(color[2]), '02x') + format(int(color[1]), '02x') + format(int(color[0]), '02x') + alpha
