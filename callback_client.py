@@ -24,26 +24,9 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-signal.signal(signal.SIGINT, signal_handler)
-
-
-
-def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
-    buffer_size = sampling_rate * seconds
-    print(f'buffer_size: {buffer_size}')
-    pa = pyaudio.PyAudio()
-    stream = pa.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=sampling_rate,
-        input=True,
-        frames_per_buffer=buffer_size
-    )
-
-    while True:
-        data_bytes = stream.read(buffer_size)
-        data_stream = io.BytesIO(data_bytes)
-
+def generate_callback(ai_service, requesttype, tableservice):
+    def callback(in_data, frame_count, time, status):
+        data_stream = io.BytesIO(in_data)
         request_headers = {}
         request_files = {}
         request_data = None
@@ -84,8 +67,28 @@ def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
         latency = (post_request - pre_request).total_seconds()
         global latencies
         latencies.append(latency)
-        time.sleep(seconds)
+        return (in_data, status)
+    return callback
 
+
+def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
+    buffer_size = sampling_rate * seconds
+    print(f'buffer_size: {buffer_size}')
+    pa = pyaudio.PyAudio()
+    stream = pa.open(
+        format=pyaudio.paInt16,
+        channels=1,
+        rate=sampling_rate,
+        input=True,
+        frames_per_buffer=buffer_size,
+        stream_callback=generate_callback(ai_service, requesttype, tableservice)
+    )
+    stream.start_stream()
+    while stream.is_active():
+        time.sleep(0.1)
+    stream.stop_stream()
+    stream.close()
+    pa.terminate()
 
 
 def parse_arguments():
@@ -134,6 +137,7 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal_handler)
     args = parse_arguments()
     if args.samplingrate != 8000:
         print(
