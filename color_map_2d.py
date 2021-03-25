@@ -50,7 +50,7 @@ def create_2d_color_map(list_of_points, list_of_colors, height, width):
     rgb = np.zeros((height, width, 3)).astype("uint8")
     c_x = int(width / 2)
     c_y = int(height / 2)
-    step = 5
+    step = 20
     win_size = int((step-1) / 2)
     for i in range(len(list_of_points)):
         rgb[c_y - int(list_of_points[i][1] * height / 2),
