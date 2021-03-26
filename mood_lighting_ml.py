@@ -167,5 +167,5 @@ def get_color_from_audio(block, rms_min_max=[0, 25000]):
     radius = 20
     color = numpy.median(emo_map[y-2:y+2, x-2:x+2], axis=0).mean(axis=0)
     # set sisyphus led colors
-    alpha = format(r_map, '02x')
+    alpha = '00' # format(r_map, '02x')
     return format(int(color[2]), '02x') + format(int(color[1]), '02x') + format(int(color[0]), '02x') + alpha

@@ -3,6 +3,10 @@ from mood_lighting_ml import get_color_from_audio
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET'])
+def index():
+    return 'yo'
+
 @app.route('/get_mood_color_from_audio_file', methods=['POST'])
 def get_mood_color_from_audio_file():
     return jsonify({'result': get_color_from_audio(request.files['audioSample'].read())})
@@ -12,4 +16,4 @@ def get_mood_color_from_audio_stream():
     return jsonify({'result': get_color_from_audio(request.get_data())})
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0")
