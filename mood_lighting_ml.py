@@ -11,6 +11,8 @@ global fs
 global all_data
 global outstr
 fs = 8000
+global prev_valence_and_energy
+prev_valence_and_energy = None
 
 """
 Load 2D image of the valence-arousal representation and define coordinates
@@ -144,12 +146,23 @@ def get_color_from_audio(block, rms_min_max=[0, 25000]):
         print(win_class, win_class_energy, win_class_valence,
                 soft_valence, soft_energy)
 
+    global prev_valence_and_energy
+    if prev_valence_and_energy == None:
+        prev_valence_and_energy = (soft_valence, soft_energy)
+    valence_difference = abs(prev_valence_and_energy[0] - soft_valence)
+    energy_difference = abs(prev_valence_and_energy[1] - soft_energy)
+    bound = 0.2
+    should_change = valence_difference > bound or energy_difference > bound
+
     all_data += mid_buf
     mid_buf = []
     h, w, _ = img
     y_center, x_center = int(h / 2), int(w / 2)
-    x = x_center + int((w/2) * soft_valence)
-    y = y_center - int((h/2) * soft_energy)
+    x = x_center + int((w/2) * soft_valence if not should_change else prev_valence_and_energy[0])
+    y = y_center - int((h/2) * soft_energy if not should_change else prev_valence_and_energy[1])
+
+    if should_change:
+        prev_valence_and_energy = (soft_valence, soft_energy)
 
     radius = 20
     color = numpy.median(emo_map[y-2:y+2, x-2:x+2], axis=0).mean(axis=0)
