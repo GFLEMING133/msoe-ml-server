@@ -1,0 +1,7 @@
+runtime: python37
+
+entrypoint: flask run --port $PORT
+
+env_variables:
+  FLASK_APP: 'server.py'
+  FLASK_ENV: 'production'
