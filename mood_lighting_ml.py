@@ -166,5 +166,4 @@ def get_coordinate_from_audio(block, rms_min_max=[0, 25000]):
 
     radius = 20
     alpha = '00' # format(r_map, '02x')
-    # return format(int(color[2]), '02x') + format(int(color[1]), '02x') + format(int(color[0]), '02x') + alpha
     return [soft_valence, soft_energy, alpha]
