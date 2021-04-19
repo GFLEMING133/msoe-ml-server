@@ -51,11 +51,11 @@ def main(seconds, sampling_rate, ai_service, requesttype, tableservice):
         if requesttype == 'file':
             # key is defined by the server schema
             request_files = { 'audioSample': data_stream }
-            request_url += '/get_mood_color_from_audio_file'
+            request_url += '/get_mood_coordinate_from_audio_file'
         elif requesttype == 'stream':
             request_headers = { 'Content-Type': 'application/octet-stream' }
             request_data = data_stream
-            request_url += '/get_mood_color_from_audio_stream'
+            request_url += '/get_mood_coordinate_from_audio_stream'
         pre_request = datetime.datetime.now()
         print(f'Sending request type: {requesttype} @ {pre_request}')
         ai_response = requests.post(
