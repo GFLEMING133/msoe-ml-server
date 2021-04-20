@@ -9,13 +9,13 @@ def index():
     return 'yo'
 
 
-@app.route('/get_mood_coordinate_from_audio_file', methods=['POST'])
-def get_mood_coordinate_from_audio_file():
+@app.route('/get_mood_coordinates_from_audio_file', methods=['POST'])
+def get_mood_coordinates_from_audio_file():
     return jsonify({'result': get_coordinate_from_audio(request.files['audioSample'].read())})
 
 
-@app.route('/get_mood_coordinate_from_audio_stream', methods=['POST'])
-def get_mood_coordinate_from_audio_stream():
+@app.route('/get_mood_coordinates_from_audio_stream', methods=['POST'])
+def get_mood_coordinates_from_audio_stream():
     return jsonify({'result': get_coordinate_from_audio(request.get_data())})
 
 
