@@ -165,5 +165,5 @@ def get_coordinate_from_audio(block, rms_min_max=[0, 25000]):
         prev_valence_and_energy = (soft_valence, soft_energy)
 
     radius = 20
-    alpha = '00' # format(r_map, '02x')
+    format(r_map, '02x')
     return [soft_valence, soft_energy, alpha]
