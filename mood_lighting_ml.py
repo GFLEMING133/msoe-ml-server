@@ -65,7 +65,7 @@ emo_map = color_map_2d.create_2d_color_map([disgust_pos,
                                            img[0], img[1])
 
 
-def get_color_from_audio(block, rms_min_max=[0, 25000]):
+def get_coordinates_from_audio(block, rms_min_max=[0, 25000]):
     mid_buf = []
     global all_data
     global outstr
@@ -165,7 +165,5 @@ def get_color_from_audio(block, rms_min_max=[0, 25000]):
         prev_valence_and_energy = (soft_valence, soft_energy)
 
     radius = 20
-    color = numpy.median(emo_map[y-2:y+2, x-2:x+2], axis=0).mean(axis=0)
-    # set sisyphus led colors
-    alpha = '00' # format(r_map, '02x')
-    return format(int(color[2]), '02x') + format(int(color[1]), '02x') + format(int(color[0]), '02x') + alpha
+    alpha = format(r_map, '02x')
+    return [soft_valence, soft_energy, alpha]
