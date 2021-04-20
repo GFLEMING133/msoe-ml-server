@@ -65,7 +65,7 @@ emo_map = color_map_2d.create_2d_color_map([disgust_pos,
                                            img[0], img[1])
 
 
-def get_coordinate_from_audio(block, rms_min_max=[0, 25000]):
+def get_coordinates_from_audio(block, rms_min_max=[0, 25000]):
     mid_buf = []
     global all_data
     global outstr
